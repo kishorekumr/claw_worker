@@ -1,21 +1,21 @@
 import time
+import requests
+import os
 
-running = False
+RUNNING = True
 
-def run_strategy():
-    global running
-    running = True
+def main():
+    print("Strategy process started")
 
-    print("Strategy started")
+    while RUNNING:
+        try:
+            # replace with your broker API
+            res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+            print("Data:", res.json())
+        except Exception as e:
+            print("Error:", e)
 
-    while running:
-        # 👉 Replace with Zerodha logic
-        print("Checking market...")
         time.sleep(5)
 
-    print("Strategy stopped")
-
-
-def stop_strategy():
-    global running
-    running = False
+if __name__ == "__main__":
+    main()
