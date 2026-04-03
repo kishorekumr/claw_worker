@@ -1,10 +1,17 @@
 from fastapi import FastAPI
 import threading
-import strategy
+import time
 
 app = FastAPI()
 
-thread = None
+running = False
+
+def strategy():
+    global running
+    running = True
+    while running:
+        print("Running algo...")
+        time.sleep(5)
 
 @app.get("/")
 def home():
@@ -12,21 +19,20 @@ def home():
 
 @app.get("/start")
 def start():
-    global thread
+    global running
+    if running:
+        return {"msg": "already running"}
 
-    if thread and thread.is_alive():
-        return {"message": "already running"}
-
-    thread = threading.Thread(target=strategy.run_strategy)
-    thread.start()
-
-    return {"message": "started"}
+    t = threading.Thread(target=strategy)
+    t.start()
+    return {"msg": "started"}
 
 @app.get("/stop")
 def stop():
-    strategy.stop_strategy()
-    return {"message": "stopped"}
+    global running
+    running = False
+    return {"msg": "stopped"}
 
 @app.get("/status")
 def status():
-    return {"running": strategy.running}
+    return {"running": running}
