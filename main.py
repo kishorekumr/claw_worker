@@ -1,27 +1,11 @@
 from fastapi import FastAPI
-import threading
-import time
-import requests
+import subprocess
+import os
+import signal
 
 app = FastAPI()
 
-running = False
-
-def strategy():
-    global running
-    running = True
-
-    while running:
-        try:
-            # 👉 Example API call (replace with your broker API)
-            res = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
-            data = res.json()
-            print("Price:", data)
-
-        except Exception as e:
-            print("Error:", e)
-
-        time.sleep(5)
+process = None
 
 
 @app.get("/")
@@ -31,24 +15,32 @@ def home():
 
 @app.get("/start")
 def start():
-    global running
+    global process
 
-    if running:
+    if process and process.poll() is None:
         return {"msg": "already running"}
 
-    t = threading.Thread(target=strategy)
-    t.start()
+    process = subprocess.Popen(["python", "strategy.py"])
 
-    return {"msg": "started"}
+    return {"msg": "started", "pid": process.pid}
 
 
 @app.get("/stop")
 def stop():
-    global running
-    running = False
-    return {"msg": "stopped"}
+    global process
+
+    if process and process.poll() is None:
+        process.terminate()
+        return {"msg": "stopped"}
+
+    return {"msg": "not running"}
 
 
 @app.get("/status")
 def status():
-    return {"running": running}
+    global process
+
+    if process and process.poll() is None:
+        return {"running": True, "pid": process.pid}
+
+    return {"running": False}
